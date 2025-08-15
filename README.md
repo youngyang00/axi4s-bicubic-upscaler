@@ -1,4 +1,4 @@
-# 🔷 axi4s-bicubic-upscaler
+#  axi4s-bicubic-upscaler
 
 ## 🧩 Introduction
 
