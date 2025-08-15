@@ -53,6 +53,7 @@ No data is copied — only pointers are swapped. This ensures smooth line transi
 - Bicubic filtering needs **4 vertical lines** per output pixel.
 - The 5th line allows us to **write the next row concurrently** while reading the current 4,  
   eliminating read-write contention and keeping **1 px/clk** throughput.
-
+## BCU Array
+<img width="1197" height="611" alt="프레젠테이션1" src="https://github.com/user-attachments/assets/325aac7c-d2f9-4b80-b475-085a69c03f6c" />
 
 
