@@ -14,6 +14,7 @@ bicubicValueBuffer
 → fifo_bram_quad_to_single_axi4s
 → colPixelStream
 
-which ensures proper timing alignment and emits AXI4-Stream output with accurate `EOL` and `EOF` flags. The default configuration implements **4× upscaling** (e.g., `320×180 → 1280×720`) using **four interpolation phases** (`0`, `0.25`, `0.5`, `0.75`), but the architecture can be generalized to other scaling ratios and resolutions.
+which ensures proper timing alignment and emits AXI4-Stream output with accurate `EOL` and `EOF` flags. The default configuration implements **4× upscaling** (e.g., `320×180 → 1280×720`) using **four interpolation phases** (`0`, `0.25`, `0.5`, `0.75`).
 
-By offloading all runtime weight evaluation to a **lookup-based structure** and applying **highly pipelined MAC operations**, this IP delivers **high-quality bicubic filtering** while maintaining:
+
+<img width="1280" height="413" alt="프레젠테이션1" src="https://github.com/user-attachments/assets/0d7109ab-7017-40d2-9f47-b4984aaefaa7" />
