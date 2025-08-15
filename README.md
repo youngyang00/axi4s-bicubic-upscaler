@@ -54,9 +54,5 @@ No data is copied — only pointers are swapped. This ensures smooth line transi
 - The 5th line allows us to **write the next row concurrently** while reading the current 4,  
   eliminating read-write contention and keeping **1 px/clk** throughput.
 
-### Border handling
-- **Left / Top**: clamp to index `0` (repeat first valid pixel),
-- **Right / Bottom**: clamp to `W−1` / `H−1` (repeat last valid pixel),
-- This ensures that the **very first output pixel** has a valid 4×4 window (no bubbles).
 
 
