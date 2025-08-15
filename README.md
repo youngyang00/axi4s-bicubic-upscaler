@@ -27,5 +27,6 @@ The Bicubic Resizer accepts an **AXI4-Stream slave** input. The **Rearranger** u
 - **Rearranger**: Line-buffer controller that reorders the incoming stream and provides a 4×4 window every cycle (border clamp).
 - **BCU Array (×16)**: Each *Bicubic Compute Unit* computes one pixel of the tile using the **16 phase-selected coefficients** and a balanced pipelined adder tree with rounding.
 - **Back Buffer**: Packs the 16-pixel tile and serializes to **1 pixel/clock AXI4-Stream**; asserts `EOL/EOF` and propagates backpressure upstream.
-- ### Rearrange Architecture
+
+### Rearrange Architecture
 <img width="1280" height="720" alt="프레젠테이션1" src="https://github.com/user-attachments/assets/ad53c407-ccb8-4983-b549-45834c2f2488" />
