@@ -1,6 +1,6 @@
 # 🔷 axi4s-bicubic-upscaler
 
-## 🧩 Introduction
+##  Introduction
 
 This repository provides a **hardware-optimized bicubic interpolation IP** designed for real-time image scaling on FPGA or ASIC platforms. The core is built on the **AXI4-Stream protocol** and supports full backpressure through `tvalid`, `tready`, `EOL`, and `EOF` signaling. After pipeline warm-up, the design achieves a **sustained throughput of 1 pixel per clock**, enabling seamless integration into high-throughput video pipelines without requiring full-frame buffering.
 
@@ -18,3 +18,6 @@ which ensures proper timing alignment and emits AXI4-Stream output with accurate
 
 
 <img width="1280" height="413" alt="프레젠테이션1" src="https://github.com/user-attachments/assets/0d7109ab-7017-40d2-9f47-b4984aaefaa7" />
+
+##  Architecture & algorithm
+<img width="966" height="379" alt="Archtecture" src="https://github.com/user-attachments/assets/cd84c460-6ea0-4d1e-abf4-4516e8a8030e" />
