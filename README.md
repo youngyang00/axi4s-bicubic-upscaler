@@ -28,39 +28,35 @@ The Bicubic Resizer accepts an **AXI4-Stream slave** input. The **Rearranger** u
 - **BCU Array (×16)**: Each *Bicubic Compute Unit* computes one pixel of the tile using the **16 phase-selected coefficients** and a balanced pipelined adder tree with rounding.
 - **Back Buffer**: Packs the 16-pixel tile and serializes to **1 pixel/clock AXI4-Stream**; asserts `EOL/EOF` and propagates backpressure upstream.
 
-## 🔄 Rearranger — 5-Line Buffer Ring (matches the RTL)
+## 🔄 Rearranger — 5-Line Buffer Ring
 <img width="1280" height="720" alt="프레젠테이션1" src="https://github.com/user-attachments/assets/ad53c407-ccb8-4983-b549-45834c2f2488" />
 
-The rearranger in `imageRearranger_clamp.v` + `lineBuffer.v` forms a **4×4 window every clock** from a streaming AXI4-Stream input.  
-It uses **five dual-port line buffers** arranged as a ring:
-
-- **Four banks = READ rows** for the current window (y−1…y+2).
-- **One bank = WRITE row** that captures the next incoming line (y+3).
-- On each `EOL`, roles **rotate by pointer swap** (no data copy).
+The `imageRearranger_clamp.v` and `lineBuffer.v` modules form a **4×4 pixel window every clock cycle** directly from the AXI4-Stream input, without relying on `EOL` or `EOF`.  
+**Line switching is driven entirely by internal counters**, and the EOL/EOF flags are handled separately in the **Back Buffer / colPixelStream** stage.
 
 ### Per-pixel operation
-1. **Write:** the incoming pixel (RGB24 in 32b) is written to the **WRITE bank** at column `x`.
-2. **Read:** the four **READ banks** are addressed at columns `{x−1, x, x+1, x+2}`  
-   (addresses are **clamped** at borders), delivering 4 samples/row.
-3. **Assemble 4×4:** each row feeds a small 4-tap shift (or register slice), so the four rows
-   produce **16 pixels/clk** → issued as `{R,G,B}[127:0]` toward `BCU_array`.
-4. **Handshake aware:** when downstream back-pressure de-asserts `tready`, **addresses and
-   shift registers hold**; the write port is also stalled, so windows remain coherent.
+1. **Write path**: The incoming pixel (RGB24 packed in 32b) is written into the **WRITE bank** at column `x`, which increments from `0` to `W−1`.
+2. **Read path**: Four **READ banks** are accessed at column offsets `{x−1, x, x+1, x+2}` (clamped at borders).  
+   Each row produces 4 pixels, forming the full **4×4 neighborhood**.
+3. **Output**: The 16 pixels (4 rows × 4 columns) are packed into `o_pixel_data_{r,g,b}[127:0]` and sent to the `BCU_array`.  
+   The `o_pixel_data_valid` signal is asserted when the window is ready.
+4. **Backpressure handling**: If downstream `tready = 0`, the write enable and address counters stall, maintaining window consistency.
 
-### Line rotation (per EOL)
-At the end of a line:
-- `WRITE` bank becomes the **new bottom READ** bank,
-- the oldest READ bank is recycled to **WRITE**,
-- column counters reset; line counter increments.
-This avoids read/write conflicts while sustaining **1 px/clk** across line boundaries.
+### Line buffer rotation
+When the horizontal counter wraps from `x == W−1` to `0`, the module performs a **line buffer role rotation**:
+- The current **WRITE** bank becomes the **bottom-most READ** bank,
+- The oldest READ bank is reused as the new **WRITE** bank.
+
+No data is copied — only pointers are swapped. This ensures smooth line transitions without stalling the pipeline.
+
+### Why 5 line buffers?
+- Bicubic filtering needs **4 vertical lines** per output pixel.
+- The 5th line allows us to **write the next row concurrently** while reading the current 4,  
+  eliminating read-write contention and keeping **1 px/clk** throughput.
 
 ### Border handling
-- **Left/Top:** replicate the first valid sample (addr = 0).
-- **Right/Bottom:** replicate the last valid sample (addr = W−1 / H−1).
-- Windows are valid **from the very first output**; no bubbles.
+- **Left / Top**: clamp to index `0` (repeat first valid pixel),
+- **Right / Bottom**: clamp to `W−1` / `H−1` (repeat last valid pixel),
+- This ensures that the **very first output pixel** has a valid 4×4 window (no bubbles).
 
-**Why 5 banks?** Bicubic needs **4 vertical rows** each cycle. The extra bank allows us to
-**capture the next line concurrently** with reading the current 4 rows, eliminating hazards at EOL and keeping the compute array fed continuously.
 
-**Output to compute:** the rearranger asserts `o_pixel_data_valid` with packed
-`o_pixel_data_{r,g,b}[127:0]` (16×8-bit per channel), exactly matching the inputs expected by `BCU_array` and the downstream value buffer.
