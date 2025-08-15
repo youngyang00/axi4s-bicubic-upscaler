@@ -17,14 +17,3 @@ bicubicValueBuffer
 which ensures proper timing alignment and emits AXI4-Stream output with accurate `EOL` and `EOF` flags. The default configuration implements **4× upscaling** (e.g., `320×180 → 1280×720`) using **four interpolation phases** (`0`, `0.25`, `0.5`, `0.75`), but the architecture can be generalized to other scaling ratios and resolutions.
 
 By offloading all runtime weight evaluation to a **lookup-based structure** and applying **highly pipelined MAC operations**, this IP delivers **high-quality bicubic filtering** while maintaining:
-
-- ✅ Low latency  
-- ✅ High throughput  
-- ✅ Resource-efficient implementation  
-
-It is ideal for use in:
-
-- 📷 Camera preprocessing  
-- 💡 Display resolution scaling  
-- 🔍 Super-resolution pipelines  
-- 🤖 Embedded vision applications requiring real-time performance and minimal distortion
