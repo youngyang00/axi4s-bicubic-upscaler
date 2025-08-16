@@ -53,7 +53,49 @@ No data is copied — only pointers are swapped. This ensures smooth line transi
 - Bicubic filtering needs **4 vertical lines** per output pixel.
 - The 5th line allows us to **write the next row concurrently** while reading the current 4,  
   eliminating read-write contention and keeping **1 px/clk** throughput.
-## BCU Array
-<img width="1197" height="611" alt="프레젠테이션1" src="https://github.com/user-attachments/assets/325aac7c-d2f9-4b80-b475-085a69c03f6c" />
+## 🧮 BCU Array
 
+<img width="1280" height="720" alt="2" src="https://github.com/user-attachments/assets/edd75372-a7ed-41be-aa83-5c844bea5f17" />
+
+Each **Bicubic Compute Unit (BCU)** is responsible for computing one output pixel based on a 4×4 neighborhood of input pixels and a precomputed 4×4 kernel.  
+The design is fully pipelined, and once filled, delivers **1 pixel per clock cycle**.
+
+### 🔧 BCU Micro-Architecture
+
+- **Input:** 16 pixels per color channel (R/G/B), packed as 128 bits per channel.
+- **Weight ROM:** Provides 16 Q1.15 weights corresponding to the unit’s assigned sub-pixel phase `(ix, iy)`.
+- **Kernel Calculators (per channel):**
+  - Each includes **16 LUT-based multipliers** and a **pipelined adder tree**.
+  - Output is rounded to 8 bits and optionally clamped.
+- **Output:** One 24-bit RGB pixel per BCU, per cycle.
+
+All 16 BCUs operate in parallel inside the `BCU_array`, each assigned to a unique output phase within a 4×4 tile.
+
+---
+
+### 📐 Phase-wise Parallel Computation
+
+<img width="1280" height="720" alt="프레젠테이션1" src="https://github.com/user-attachments/assets/8fd86ac8-f817-4ed6-bdbe-5aa94650fe72" />
+
+Although all BCUs share the same 4×4 input pixel window, each BCU applies a **different kernel** based on its designated output position (phase) `(ix, iy)` within the upscaled tile.
+
+### 🔢 Per-BCU Interpolation Logic
+
+- **Input Window:** Same 4×4 window for all BCUs.
+- **Weights:** Each BCU fetches its own set of **16 Q1.15 kernel weights** from the ROM.
+- **Computation:**
+\[
+\text{acc}_c = \sum_{j=0}^{3} \sum_{i=0}^{3} P_c[j][i] \cdot W[j][i]
+\quad\Rightarrow\quad
+\text{out}_c = \text{round}(\text{acc}_c)
+\]
+- **Output:** RGB pixel from each BCU, spatially placed to build the 4×4 tile.
+
+This design enables **all 16 sub-pixel positions** to be computed in parallel with no runtime kernel evaluation.  
+The result is a complete 4×4 output tile — generated **every clock** — with precise sub-pixel accuracy and fully fixed weights.
+
+> 📌 This phase-parallel architecture allows for deterministic high-throughput processing with minimal latency and no DSP usage.
+
+
+---
 
