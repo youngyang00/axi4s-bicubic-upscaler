@@ -75,9 +75,12 @@ All 16 BCUs operate in parallel inside the `BCU_array`, each assigned to a uniqu
 
 ### 📐 Phase-wise Parallel Computation
 
-<img width="1280" height="720" alt="프레젠테이션1" src="https://github.com/user-attachments/assets/8fd86ac8-f817-4ed6-bdbe-5aa94650fe72" />
+<img width="1280" height="720" alt="프레젠테이션1" src="https://github.com/user-attachments/assets/5a187e74-238d-4d6e-9922-4e5c9a6e1fc9" />
 
-Although all BCUs share the same 4×4 input pixel window, each BCU applies a **different kernel** based on its designated output position (phase) `(ix, iy)` within the upscaled tile.
+Each 4×4 output tile consists of **16 sub-pixel positions**, corresponding to different fractional coordinates in the upscaled image.  
+To compute this tile efficiently, the architecture instantiates **16 Bicubic Compute Units (BCUs)** — one per position — and assigns each a fixed interpolation **phase** `(ix, iy)`.
+
+Although all BCUs receive the **same 4×4 input window**, each unit applies a **different set of kernel weights** corresponding to its phase.
 
 ### 🔢 Per-BCU Interpolation Logic
 
