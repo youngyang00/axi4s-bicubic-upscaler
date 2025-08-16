@@ -188,5 +188,5 @@ This efficient implementation consumes less than **20% of LUTs** and only **~3% 
 - Clock Frequency: **300 MHz**
 - AXI4-Stream Output Rate: **1 pixel/clock**
 - **Measured Throughput**:  
-  **≈ 3.93 frames/sec** at full-resolution output (1280×720)
+**Throughput:** ~3.93 ms per 1280×720 frame (≈ 254 fps) @ 300 MHz, 1 px/clk
 
