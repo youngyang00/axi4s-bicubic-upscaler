@@ -115,4 +115,33 @@ As the 4×4 input window slides horizontally or vertically:
 - Output tiles are placed **contiguously** — no overlap, no gaps
 
 ---
+## 5. Back Buffer — Output Tile Packing & Serialization
+<img width="1280" height="455" alt="프레젠테이션1" src="https://github.com/user-attachments/assets/c08e3fa6-d586-43d6-8a0d-e9b36e22d851" />
 
+The **Back Buffer** module transforms the parallel 4×4 RGB tile output from the `BCU_array` into a serialized AXI4-Stream output, emitting one pixel per clock. This process ensures smooth downstream transfer with full timing alignment and backpressure support.
+
+### Data Flow Overview
+
+#### 🔹 Output pixels (Packed)
+
+- Each `BCU` generates one RGB pixel (24 bits).
+- All 16 pixels from the array are delivered in a single cycle as three 128-bit vectors:
+  - `r_tile[127:0]`, `g_tile[127:0]`, `b_tile[127:0]`
+
+#### 🔹 Tile → Row Bursts (4 px/beat)
+
+- The **`bicubicValueBuffer`** module groups the 4×4 tile into **row bursts**:
+  - 4 rows × 4 pixels → 4 beats
+  - Each beat holds 4 RGB pixels = 96 bits (4 × 24b)
+
+- This representation is used to efficiently write to the internal **BRAM FIFO**.
+
+#### 🔹 Quad → Single Serializer
+
+- The **`fifo_bram_quad_to_single_axi4s`** reads back one beat at a time and serializes the 4 pixels.
+- The **`colPixelStream`** module then:
+  - Emits 1 pixel per cycle (`tdata`)
+  - Asserts `tvalid`, accepts `tready`
+  - Inserts appropriate `EOL` and `EOF` signals based on pixel location
+
+---
