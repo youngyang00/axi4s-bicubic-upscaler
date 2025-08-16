@@ -1,4 +1,4 @@
-# 🔷 axi4s-bicubic-upscaler
+# AXI4S Bicubic Interpolation IP
 
 ##  1. Introduction
 
