@@ -1,6 +1,6 @@
 # 🔷 axi4s-bicubic-upscaler
 
-##  Introduction
+##  1. Introduction
 
 This repository provides a **hardware-optimized bicubic interpolation IP** designed for real-time image scaling on FPGA or ASIC platforms. The core is built on the **AXI4-Stream protocol** and supports full backpressure through `tvalid`, `tready`, `EOL`, and `EOF` signaling. After pipeline warm-up, the design achieves a **sustained throughput of 1 pixel per clock**, enabling seamless integration into high-throughput video pipelines without requiring full-frame buffering.
 
@@ -19,7 +19,7 @@ which ensures proper timing alignment and emits AXI4-Stream output with accurate
 
 <img width="1280" height="413" alt="프레젠테이션1" src="https://github.com/user-attachments/assets/0d7109ab-7017-40d2-9f47-b4984aaefaa7" />
 
-##  Architecture
+##  2. Architecture
 <img width="966" height="379" alt="Archtecture" src="https://github.com/user-attachments/assets/cd84c460-6ea0-4d1e-abf4-4516e8a8030e" />
 
 The Bicubic Resizer accepts an **AXI4-Stream slave** input. The **Rearranger** uses **line buffers (×5)** to assemble a real-time **4×4 pixel window** per cycle (border **clamp**), and the **BCU Array (×16)** applies **phase-indexed 2D weight LUTs (Q1.15)** to perform a **single-pass 4×4 MAC**, generating a **4×4 output tile (16 pixels)** in parallel. The **Back Buffer** then packs and serializes the tile to an **AXI4-Stream master** output at **1 px/clk**, with accurate `EOL/EOF` markers and full `tvalid/tready` backpressure propagation. All multipliers are **LUT-based with a two-stage pipeline**—**no DSP blocks**—for robust timing on low-end FPGAs.
@@ -28,7 +28,7 @@ The Bicubic Resizer accepts an **AXI4-Stream slave** input. The **Rearranger** u
 - **BCU Array (×16)**: Each *Bicubic Compute Unit* computes one pixel of the tile using the **16 phase-selected coefficients** and a balanced pipelined adder tree with rounding.
 - **Back Buffer**: Packs the 16-pixel tile and serializes to **1 pixel/clock AXI4-Stream**; asserts `EOL/EOF` and propagates backpressure upstream.
 
-## 🔄 Rearranger — 5-Line Buffer Ring
+## 3. Rearranger — 5-Line Buffer Ring
 <img width="1280" height="720" alt="프레젠테이션1" src="https://github.com/user-attachments/assets/ad53c407-ccb8-4983-b549-45834c2f2488" />
 
 The `imageRearranger_clamp.v` and `lineBuffer.v` modules form a **4×4 pixel window every clock cycle** directly from the AXI4-Stream input, without relying on `EOL` or `EOF`.  
@@ -53,7 +53,7 @@ No data is copied — only pointers are swapped. This ensures smooth line transi
 - Bicubic filtering needs **4 vertical lines** per output pixel.
 - The 5th line allows us to **write the next row concurrently** while reading the current 4,  
   eliminating read-write contention and keeping **1 px/clk** throughput.
-## 🧮 BCU Array
+## 4. BCU Array
 
 ### 1) Micro-architecture of a Single BCU
 <img width="1280" height="720" alt="BCU_Arc" src="https://github.com/user-attachments/assets/80b2bf41-1628-4ff9-bcf2-c88453347832" />
@@ -79,15 +79,14 @@ This allows all **16 sub-pixel positions** of a 4×4 output tile to be computed 
 
 For each color channel \(c\):
 
-\[
-\text{acc}_c = \sum_{j=0}^{3} \sum_{i=0}^{3} P_c[j][i] \cdot W_{ix,iy}[j][i]
-\quad\Rightarrow\quad
-\text{out}_c = \text{round}(\text{acc}_c)
-\]
+For each color channel c:
+    acc_c = ∑(j=0 to 3) ∑(i=0 to 3) P_c[j][i] * W_{ix,iy}[j][i]
+    out_c = round(acc_c)
 
 Where:
-- \( P_c[j][i] \): 8-bit input pixel at row \(j\), column \(i\), for channel \(c\)
-- \( W_{ix,iy}[j][i] \): Q1.15 kernel coefficient for phase \((ix, iy)\)
+    P_c[j][i] = 8-bit input pixel at row j, col i, for channel c
+    W_{ix,iy}[j][i] = Q1.15 kernel weight for phase (ix, iy)
+
 
 Each BCU produces one RGB output pixel for its assigned tile location.  
 The **16 results are spatially aligned** to form a complete 4×4 tile.
@@ -98,15 +97,22 @@ The **16 results are spatially aligned** to form a complete 4×4 tile.
 
 <img width="1280" height="720" alt="프레젠테이션1" src="https://github.com/user-attachments/assets/18438425-989e-4295-a640-f314f820b830" />
 
-As the **input window slides** over the image, the `BCU_array` computes one **4×4 tile per clock**.  
-Each tile corresponds to a specific 4×4 region in the upscaled output, and adjacent tiles are processed in sequence as the window advances.
+Each valid input window from the Rearranger corresponds to a single **4×4 output tile** produced by the `BCU_array`.  
+The array performs **tile-wise bicubic interpolation**, where a fixed 4×4 input patch is mapped into 16 output pixels — one per compute unit — using a unique interpolation phase `(ix, iy)` per unit.
 
-- The same **input pixels** are reused across multiple tile positions.
-- Output tiles are packed by `bicubicValueBuffer` and serialized by `fifo_bram_quad_to_single_axi4s`.
-- Final formatting and AXI4-Stream emission are handled downstream.
+For a 4× upscale, the mapping from input pixel to output tile is defined as:
 
+- For an input anchor coordinate `(x, y)`,  
+  the top-left of the output tile is located at `(X0, Y0) = (4×x, 4×y)`
+- Each compute unit calculates one pixel at position:  
+  `X = X0 + ix`, `Y = Y0 + iy`  
+  where `(ix, iy) ∈ {0, 1, 2, 3}`
 
+As the 4×4 input window slides horizontally or vertically:
 
+- A single step in **x** shifts the tile by 4 pixels to the right  
+- A single step in **y** shifts the tile by 4 pixels downward  
+- Output tiles are placed **contiguously** — no overlap, no gaps
 
 ---
 
