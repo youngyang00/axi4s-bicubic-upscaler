@@ -1,11 +1,28 @@
-// ---------------------------------------------------------
-// Quad-Input to Single-Output FIFO Using True Dual-Port RAM
-// AXI4-Stream Interfaces
-// 
-// - Input: AXI4-Stream slave receives 4 words (packed) per beat
-// - Output: AXI4-Stream master sends 1 word per beat
-// - Uses Xilinx true dual-port no-change RAM (single clock)
-// ---------------------------------------------------------
+/*
+
+MIT License
+
+Copyright (c) 2025 Gwangsun Shin
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
 module fifo_bram_quad_to_single_axi4s#(
     parameter DATA_WIDTH = 96,   // Width of each individual data word (24 bits)
     parameter DEPTH      = 1024   // Number of quad-entries in memory
