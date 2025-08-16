@@ -190,5 +190,3 @@ This efficient implementation consumes less than **20% of LUTs** and only **~3% 
 - **Measured Throughput**:  
   **≈ 3.93 frames/sec** at full-resolution output (1280×720)
 
-> The current design demonstrates stable streaming output with **3.93 fps** at 300 MHz, proving functional correctness and architectural scalability. For production use, higher frame rates can be achieved through deeper pipelining, resource duplication, or integration into multi-channel video pipelines.
-
